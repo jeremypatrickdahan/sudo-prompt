@@ -524,18 +524,16 @@ function WindowsElevate(instance, end) {
   command.push('-WindowStyle hidden');
   command.push('-Verb runAs');
   command = command.join(' ');
-  var child = Node.child.exec(command, { encoding: 'utf-8' },
-    function(error, stdout, stderr) {
-      // We used to return PERMISSION_DENIED only for error messages containing
-      // the string 'canceled by the user'. However, Windows internationalizes
-      // error messages (issue 96) so now we must assume all errors here are
-      // permission errors. This seems reasonable, given that we already run the
-      // user's command in a subshell.
-      if (error) return end(new Error(PERMISSION_DENIED), stdout, stderr);
-      end();
-    }
-  );
-  child.stdin.end(); // Otherwise PowerShell waits indefinitely on Windows 7.
+  try{
+    // Using execSync instead of exec because of an Electron bug where exec is promisified 
+    // (cannot find a reference)
+    require('child_process').execSync(command, { encoding: 'utf-8' });
+    end();
+  }
+  catch(e){
+    console.error(e)
+    end(new Error(PERMISSION_DENIED), "", e);
+  }
 }
 
 function WindowsResult(instance, end) {
